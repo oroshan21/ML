@@ -23,6 +23,7 @@ team_game_off_epa = team_game_off_epa.sort_values(['posteam', 'season', 'week'])
 team_game_def_epa = pbp_pandas.groupby(['season', 'week', 'defteam'])['epa'].mean().reset_index()
 team_game_def_epa = team_game_def_epa.sort_values(['defteam', 'season', 'week'])
 
+# print(team_game_def_epa.columns)
 
 #EPA prior to start of current game, based off 8 prior games
 team_game_off_epa['rolling_off_epa'] = (    
@@ -30,57 +31,57 @@ team_game_off_epa['rolling_off_epa'] = (
     .transform(lambda x : x.shift(1).rolling(8, min_periods = 1).mean())
 )
 
-team_game_off_epa['rolling_def_epa'] = (
-    team_game_off_epa.groupby(['season','defteam'])['epa']
+team_game_def_epa['rolling_def_epa'] = (
+    team_game_def_epa.groupby(['season','defteam'])['epa']
     .transform(lambda x : x.shift(1).rolling(8, min_periods = 1).mean())
 )
 
 home_off_epa = team_game_off_epa.rename(
     columns = {
-        'posteam' : 'home_team',
+        'posteam' : 'home_off_team',
         'rolling_off_epa': 'home_rolling_off_epa'
     }
-)[['season','week','home_team','home_rolling_off_epa']]
+)[['season','week','home_off_team','home_rolling_off_epa']]
 
 away_off_epa = team_game_off_epa.rename(
     columns = {
-        'posteam' : 'away_team',
+        'posteam' : 'away_off_team',
         'rolling_off_epa': 'away_rolling_off_epa'
     }
-)[['season','week','away_team','away_rolling_off_epa']]
+)[['season','week','away_off_team','away_rolling_off_epa']]
 
 home_def_epa = team_game_def_epa.rename(
     columns = {
-        'posteam' : 'home_team',
+        'defteam' : 'home_def_team',
         'rolling_def_epa': 'home_rolling_def_epa'
     }
-)[['season','week','home_team','home_rolling_def_epa']]
+)[['season','week','home_def_team','home_rolling_def_epa']]
 
 away_def_epa = team_game_off_epa.rename(
     columns = {
-        'posteam' : 'away_team',
+        'defteam' : 'away_def_team',
         'rolling_def_epa': 'away_rolling_def_epa'
     }
-)[['season','week','away_team','away_rolling_def_epa']]
+)[['season','week','away_def_team','away_rolling_def_epa']]
 
 games = schedules_pandas.merge(
     home_off_epa,
-    on=['season','week','home_team'],
+    on=['season','week','home_off_team'],
     how = 'left'
 )
 games = games.merge(
     away_off_epa,
-    on=['season','week','away_team'],
+    on=['season','week','away_off_team'],
     how = 'left'
 )
-games = schedules_pandas.merge(
+games = games.merge(
     home_def_epa,
-    on=['season','week','home_team'],
+    on=['season','week','home_def_team'],
     how = 'left'
 )
 games = games.merge(
     away_def_epa,
-    on=['season','week','away_team'],
+    on=['season','week','away_def_team'],
     how = 'left'
 )
 
@@ -94,7 +95,9 @@ games['home_win'] = (
 features = [
     'home_rolling_off_epa',
     'away_rolling_off_epa',
-    'epa_diff'
+    'epa_diff',
+    'home_rolling_def_epa',
+    'away_rolling_def_epa'
 ]
 model_data = games.dropna(
     subset=features + ['home_win']).copy()
